@@ -1,0 +1,28 @@
+name: lint-build-app
+on:
+    push:
+        branches: [main,dev]
+    pull_request:
+        branches: [main,dev]
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+         - name: checkout repo
+           uses: actions/checkout@v3
+         - name: setup
+           uses: actions/setup-node@v3
+           with:
+             node-version: 20
+         - name: install pnpm
+           run: npm i -g pnpm
+         - name: install pkgs
+           working-directory: .
+           run:  pnpm install --frozen-lockfile
+         - name: build
+           working-directory: .
+           run: npm run build
+         - name: lint
+           working-directory: .
+           run: npm run lint

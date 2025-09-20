@@ -18,10 +18,9 @@ model user {
   email                    String               @unique
   password                 String?
   prev_password            String?
-  primary_email            String               @unique
   backup_email             String?
   is_banned                Boolean              @default(false)
-  is_banned_at             DateTime
+  is_banned_at             DateTime?
   is_backup_email_verified Boolean              @default(false)
   backup_email_verified_at DateTime?
   email_mfa_enabled        Boolean              @default(false)
@@ -42,9 +41,10 @@ enum SCOPE {
 
 model verification_token {
   id         String   @id @default(uuid())
-  code       String?
+  code       String
   user_id    String
   user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  scope SCOPE @default(SIGNUP)
   expires_at DateTime
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

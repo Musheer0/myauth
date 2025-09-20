@@ -4,6 +4,7 @@ import { SignUpDto } from './dto/sign-up.dto';
 import { ClientMetadata } from 'src/shared/decorators/client-metadata.decorator';
 import { ClientMetada } from 'src/shared/types';
 import { VerificationTokenDto } from './dto/verification-token.dto';
+import { EmailDto } from './dto/email.dto';
 
 @Controller('/api/v1/auth')
 export class AuthController {
@@ -24,5 +25,10 @@ export class AuthController {
     if (typeof session !== 'string') {
       throw new BadRequestException('Invalid token');
     }
+    return session;
+  }
+  @Post('resend/verification/email')
+  async ResendEmailVerification(@Body() body: EmailDto) {
+    return this.authService.ResendSignUpVerificationToken(body);
   }
 }

@@ -6,6 +6,6 @@ export class SignUpDto {
   email: string;
 
   @IsString()
-  @Length(6, 6)
+  @Length(6, 64)
   password: string;
 }

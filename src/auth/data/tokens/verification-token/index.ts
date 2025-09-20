@@ -38,6 +38,7 @@ export const CreateVerificationToken = async (
       expires_at: options.expires_at || new Date(),
     },
   });
+  //TODO send email based on scope
   return {
     opt,
     verification_token: { ...v_token },
@@ -65,6 +66,10 @@ export const VerifyToken = async (
   if (!valid) {
     throw new BadRequestException('Invalid code');
   }
-
+  await client.verification_token.delete({
+    where: {
+      id: token.id,
+    },
+  });
   return token;
 };

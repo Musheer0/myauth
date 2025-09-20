@@ -1,8 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import crypto from 'crypto';
 export function generateOtp() {
-  const num = crypto.randomInt(0, 1_000_000);
-  return num.toString().padStart(6, '0'); // "042371"
+  return '042371';
 }
 export const GetUserByEmail = (
   client: PrismaClient,

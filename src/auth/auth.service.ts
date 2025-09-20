@@ -12,6 +12,8 @@ import { VerificationTokenDto } from './dto/verification-token.dto';
 import { VerifyEmail } from './data/user/verification/email-verification';
 import { JwtService } from '@nestjs/jwt';
 import { $Enums } from '@prisma/client';
+import { EmailDto } from './dto/email.dto';
+import { ResendEmailVerificationToken } from './data/tokens/verification-token/resend-email-verification-token';
 
 @Injectable()
 export class AuthService {
@@ -54,5 +56,15 @@ export class AuthService {
       scope,
     });
     return verification_token;
+  }
+  async ResendSignUpVerificationToken(data: EmailDto) {
+    const verification_token = await ResendEmailVerificationToken(
+      this.prisma,
+      data.email,
+    );
+    return {
+      verification_id: verification_token.verification_token.id,
+      expires_at: verification_token.verification_token.expires_at,
+    };
   }
 }

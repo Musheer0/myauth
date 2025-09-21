@@ -5,6 +5,7 @@
 import { PrismaClient } from '@prisma/client';
 import { ClientMetada, jwt_token } from 'src/shared/types';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { GetUserById } from '../../user/utils';
 
 /**
  * Helper to fetch location from IP using free API
@@ -66,20 +67,22 @@ export async function verifySession(
 ) {
   const session = await client.session.findUnique({
     where: { id: session_id },
-    include: options.get_user ? { user: true } : undefined,
   });
 
   if (!session) throw new NotFoundException('Session not found');
   if (session.expires_at < new Date())
     throw new ForbiddenException('Session expired');
-
+  if (options.get_user) {
+    const user = await GetUserById(client, session.user_id, { strict: true });
+    return { session, user };
+  }
   // Update last_used
   await client.session.update({
     where: { id: session_id },
     data: { last_used: new Date() },
   });
 
-  return session;
+  return { session, user: null };
 }
 
 /**
@@ -92,5 +95,32 @@ export async function deleteSession(client: PrismaClient, session_id: string) {
   if (!session) throw new NotFoundException('Session not found');
 
   await client.session.delete({ where: { id: session_id } });
-  return true;
+  return { success: true };
+}
+export async function deleteSessionAll(
+  client: PrismaClient,
+  jwt_token: jwt_token,
+) {
+  await client.session.deleteMany({
+    where: { user_id: jwt_token.user_id, id: { not: jwt_token.token_id } },
+  });
+  return { success: true };
+}
+
+export async function getAllSession(
+  client: PrismaClient,
+  jwt_token: jwt_token,
+) {
+  return client.session
+    .findMany({
+      where: {
+        user_id: jwt_token.user_id,
+      },
+      orderBy: {
+        last_used: 'desc',
+      },
+    })
+    .then((data) =>
+      data.map((e) => ({ ...e, primary: e.id == jwt_token.token_id })),
+    );
 }

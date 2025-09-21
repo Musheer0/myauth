@@ -1,6 +1,7 @@
+/* eslint-disable  @typescript-eslint/no-unused-vars */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ClientMetada } from 'src/shared/types';
+import { ClientMetada, jwt_token } from 'src/shared/types';
 import { SignUpDto } from './dto/sign-up.dto';
 import { CreateEmailUser } from './data/user/sign-up/create-email-user';
 import {
@@ -16,7 +17,13 @@ import { EmailDto } from './dto/email.dto';
 import { ResendEmailVerificationToken } from './data/tokens/verification-token/resend-email-verification-token';
 import { CredentialsSignInDto } from './dto/credentials-sign-in.dto';
 import { LoginCrendentialsUser } from './data/user/sign-in/login-creadentials-user';
-import { createSession } from './data/tokens/session-token';
+import {
+  createSession,
+  deleteSession,
+  deleteSessionAll,
+  getAllSession,
+  verifySession,
+} from './data/tokens/session-token';
 
 @Injectable()
 export class AuthService {
@@ -84,5 +91,27 @@ export class AuthService {
     const session = await createSession(this.prisma, metadata, user.id);
     const token = this.jwtService.sign(session);
     return token;
+  }
+
+  async verify_session(jwt_token: jwt_token) {
+    const session_info = await verifySession(this.prisma, jwt_token.token_id, {
+      get_user: true,
+    });
+    if (session_info.user) {
+      const { password, prev_password, is_banned, is_banned_at, ...safe_user } =
+        session_info.user;
+      return { session: session_info.session, user: safe_user };
+    }
+    return { session: session_info.session, user: null };
+  }
+  async Logout(jwt_token: jwt_token) {
+    return deleteSession(this.prisma, jwt_token.token_id);
+  }
+  async LogoutAll(jwt_token: jwt_token) {
+    return deleteSessionAll(this.prisma, jwt_token);
+  }
+
+  async GetAllSession(jwt_token: jwt_token) {
+    return getAllSession(this.prisma, jwt_token);
   }
 }

@@ -14,6 +14,9 @@ import { JwtService } from '@nestjs/jwt';
 import { $Enums } from '@prisma/client';
 import { EmailDto } from './dto/email.dto';
 import { ResendEmailVerificationToken } from './data/tokens/verification-token/resend-email-verification-token';
+import { CredentialsSignInDto } from './dto/credentials-sign-in.dto';
+import { LoginCrendentialsUser } from './data/user/sign-in/login-creadentials-user';
+import { createSession } from './data/tokens/session-token';
 
 @Injectable()
 export class AuthService {
@@ -21,34 +24,6 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
-  async SignUpEmail(metadata: ClientMetada, data: SignUpDto) {
-    const user = await CreateEmailUser(this.prisma, data);
-    const verification_token = await CreateVerificationToken(this.prisma, {
-      user_id: user.id,
-      scope: 'SIGNUP',
-      expires_at: getFutureDate(),
-    });
-    if (process.env.DEBUG) {
-      console.log(verification_token);
-    }
-    return {
-      verification_id: verification_token.verification_token.id,
-      expires_at: verification_token.verification_token.expires_at,
-    };
-  }
-  async verifiyEmailService(
-    metadata: ClientMetada,
-    data: VerificationTokenDto,
-  ) {
-    const verification_token = await this.VerifyToken(data, 'SIGNUP');
-    const session = await VerifyEmail(
-      this.prisma,
-      metadata,
-      verification_token,
-    );
-    const token = this.jwtService.sign(session);
-    return token;
-  }
   private async VerifyToken(data: VerificationTokenDto, scope: $Enums.SCOPE) {
     const verification_token = await VerifyToken(this.prisma, {
       id: data.token_id,
@@ -62,9 +37,52 @@ export class AuthService {
       this.prisma,
       data.email,
     );
+    //TODO send email based on scope
+
     return {
       verification_id: verification_token.verification_token.id,
       expires_at: verification_token.verification_token.expires_at,
     };
+  }
+
+  //route handlers
+
+  async SignUpEmail(metadata: ClientMetada, data: SignUpDto) {
+    const user = await CreateEmailUser(this.prisma, data);
+    const verification_token = await CreateVerificationToken(this.prisma, {
+      user_id: user.id,
+      scope: 'SIGNUP',
+      expires_at: getFutureDate(),
+    });
+    if (process.env.DEBUG) {
+      console.log(verification_token);
+    }
+    //TODO send email based on scope
+    return {
+      verification_id: verification_token.verification_token.id,
+      expires_at: verification_token.verification_token.expires_at,
+    };
+  }
+
+  async verifiyEmailService(
+    metadata: ClientMetada,
+    data: VerificationTokenDto,
+  ) {
+    const verification_token = await this.VerifyToken(data, 'SIGNUP');
+    const session = await VerifyEmail(
+      this.prisma,
+      metadata,
+      verification_token,
+    );
+    const token = this.jwtService.sign(session);
+    return token;
+  }
+
+  async CredentialsLogin(metadata: ClientMetada, data: CredentialsSignInDto) {
+    const user = await LoginCrendentialsUser(this.prisma, data);
+    //TODO send email if mfa login
+    const session = await createSession(this.prisma, metadata, user.id);
+    const token = this.jwtService.sign(session);
+    return token;
   }
 }

@@ -8,3 +8,8 @@ export type jwt_token = {
   token_id: string;
   expires_at: string;
 };
+
+export type sanitized_verification_token = {
+  verification_id: string;
+  expires_at: Date;
+};

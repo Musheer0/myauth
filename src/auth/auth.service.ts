@@ -37,6 +37,8 @@ export class AuthService {
       this.prisma,
       data.email,
     );
+      //TODO send email based on scope
+
     return {
       verification_id: verification_token.verification_token.id,
       expires_at: verification_token.verification_token.expires_at,
@@ -55,6 +57,7 @@ export class AuthService {
     if (process.env.DEBUG) {
       console.log(verification_token);
     }
+      //TODO send email based on scope
     return {
       verification_id: verification_token.verification_token.id,
       expires_at: verification_token.verification_token.expires_at,
@@ -76,11 +79,8 @@ export class AuthService {
   }
 
   async CredentialsLogin(metadata: ClientMetada, data: CredentialsSignInDto) {
-    if (data.token_id) {
-      //TODO remove this block when mfa supported
-      throw new BadRequestException('mfa not supported yet');
-    }
     const user = await LoginCrendentialsUser(this.prisma, data);
+    //TODO send email if mfa login
     const session = await createSession(this.prisma, metadata, user.id);
     const token = this.jwtService.sign(session);
     return token;

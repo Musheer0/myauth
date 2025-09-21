@@ -38,7 +38,6 @@ export const CreateVerificationToken = async (
       expires_at: options.expires_at || new Date(),
     },
   });
-  //TODO send email based on scope
   return {
     opt,
     verification_token: { ...v_token },

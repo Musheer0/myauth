@@ -37,6 +37,7 @@ model user {
 enum SCOPE {
   SIGNUP
   BASIC_EDIT
+  EMAIL_MFA
 }
 
 model verification_token {

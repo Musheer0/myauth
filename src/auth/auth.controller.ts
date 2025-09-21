@@ -32,7 +32,7 @@ export class AuthController {
     if (typeof session !== 'string') {
       throw new BadRequestException('Invalid token');
     }
-    return session;
+return {token: session};
   }
   @Post('resend/verification/email')
   async ResendEmailVerification(@Body() body: EmailDto) {
@@ -48,6 +48,6 @@ export class AuthController {
     if (typeof session !== 'string') {
       throw new InternalServerErrorException();
     }
-    return session;
+    return {token: session};
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ClientMetada } from 'src/shared/types';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -37,7 +37,7 @@ export class AuthService {
       this.prisma,
       data.email,
     );
-      //TODO send email based on scope
+    //TODO send email based on scope
 
     return {
       verification_id: verification_token.verification_token.id,
@@ -57,7 +57,7 @@ export class AuthService {
     if (process.env.DEBUG) {
       console.log(verification_token);
     }
-      //TODO send email based on scope
+    //TODO send email based on scope
     return {
       verification_id: verification_token.verification_token.id,
       expires_at: verification_token.verification_token.expires_at,

@@ -97,7 +97,30 @@ export async function deleteSession(client: PrismaClient, session_id: string) {
   await client.session.delete({ where: { id: session_id } });
   return { success: true };
 }
-export async function deleteSessionAll(client: PrismaClient, user_id: string) {
-  await client.session.deleteMany({ where: { user_id: user_id } });
+export async function deleteSessionAll(
+  client: PrismaClient,
+  jwt_token: jwt_token,
+) {
+  await client.session.deleteMany({
+    where: { user_id: jwt_token.user_id, id: { not: jwt_token.token_id } },
+  });
   return { success: true };
+}
+
+export async function getAllSession(
+  client: PrismaClient,
+  jwt_token: jwt_token,
+) {
+  return client.session
+    .findMany({
+      where: {
+        user_id: jwt_token.user_id,
+      },
+      orderBy: {
+        last_used: 'desc',
+      },
+    })
+    .then((data) =>
+      data.map((e) => ({ ...e, primary: e.id == jwt_token.token_id })),
+    );
 }

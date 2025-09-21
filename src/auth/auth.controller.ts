@@ -67,13 +67,20 @@ export class AuthController {
     return this.authService.verify_session(jwt_token);
   }
   @UseGuards(JwtGuard)
-  @Delete('logout/me')
+  @Get('/me/all')
+  async MeAll(@Req() req) {
+    const jwt_token: null | jwt_token = req?.user;
+    if (!jwt_token) throw new UnauthorizedException();
+    return this.authService.GetAllSession(jwt_token);
+  }
+  @UseGuards(JwtGuard)
+  @Delete('logout')
   async LogoutMe(@Req() req) {
     return this.authService.Logout(req?.user);
   }
 
   @UseGuards(JwtGuard)
-  @Delete('logout/me/all')
+  @Delete('logout/all')
   async LogoutMeAll(@Req() req) {
     return this.authService.LogoutAll(req?.user);
   }

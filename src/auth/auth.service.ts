@@ -21,6 +21,7 @@ import {
   createSession,
   deleteSession,
   deleteSessionAll,
+  getAllSession,
   verifySession,
 } from './data/tokens/session-token';
 
@@ -107,6 +108,10 @@ export class AuthService {
     return deleteSession(this.prisma, jwt_token.token_id);
   }
   async LogoutAll(jwt_token: jwt_token) {
-    return deleteSessionAll(this.prisma, jwt_token.user_id);
+    return deleteSessionAll(this.prisma, jwt_token);
+  }
+
+  async GetAllSession(jwt_token: jwt_token) {
+    return getAllSession(this.prisma, jwt_token);
   }
 }

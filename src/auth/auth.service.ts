@@ -28,6 +28,8 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SendEmailDto } from 'src/shared/dto/send-email.dto';
 import { generateOTPEmail } from 'src/shared/templates/email/generate-otp-template';
+import { EnableEmailMFA } from './data/user/mfa/enable-mfa';
+import { DisableEmailMFA } from './data/user/mfa/disable-mfa';
 
 @Injectable()
 export class AuthService {
@@ -142,5 +144,11 @@ export class AuthService {
 
   async GetAllSession(jwt_token: jwt_token) {
     return getAllSession(this.prisma, jwt_token);
+  }
+  async EnableMFa(jwt_token: jwt_token) {
+    return EnableEmailMFA(this.prisma, jwt_token);
+  }
+  async DisableMFa(jwt_token: jwt_token) {
+    return DisableEmailMFA(this.prisma, jwt_token);
   }
 }

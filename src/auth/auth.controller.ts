@@ -8,6 +8,7 @@ import {
   Delete,
   Get,
   InternalServerErrorException,
+  Patch,
   Post,
   Req,
   UnauthorizedException,
@@ -83,5 +84,16 @@ export class AuthController {
   @Delete('logout/all')
   async LogoutMeAll(@Req() req) {
     return this.authService.LogoutAll(req?.user);
+  }
+  @UseGuards(JwtGuard)
+  @Patch('enable/mfa')
+  async enableMfa(@Req() req) {
+    return this.authService.EnableMFa(req?.user);
+  }
+
+  @UseGuards(JwtGuard)
+  @Patch('disable/mfa')
+  async disableMfa(@Req() req) {
+    return this.authService.DisableMFa(req?.user);
   }
 }

@@ -22,14 +22,14 @@ export const LoginCrendentialsUser = async (
   const isCorrectPassword = await verify(user.password, data.password);
   if (user.is_banned) throw new BadRequestException('this email id banned');
   if (!isCorrectPassword) throw new BadRequestException('invalid credentials');
-  if (user.email_mfa_enabled) {
+  if (user.mfa_enabled) {
     if (data.token_id && data.code) {
-      const verification_token = await VerifyToken(client, {
+      await VerifyToken(client, {
         id: data.token_id,
         code: data.code,
         scope: 'EMAIL_MFA',
       });
-      console.log(verification_token);
+
       return user;
     }
     await client.verification_token.deleteMany({

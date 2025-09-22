@@ -12,7 +12,9 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
+enum MFA_METHOD{
+  EMAIL
+}
 model user {
   id                       String               @id @default(uuid())
   email                    String               @unique
@@ -23,8 +25,8 @@ model user {
   is_banned_at             DateTime?
   is_backup_email_verified Boolean              @default(false)
   backup_email_verified_at DateTime?
-  email_mfa_enabled        Boolean              @default(false)
-  email_mfa_enabled_at     DateTime?
+  mfa_enabled        Boolean              @default(false) 
+  mfa_enabled_at     DateTime? 
   is_email_verified        Boolean              @default(false)
   email_verified_at        DateTime?
   image_url                String               @default("https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg")

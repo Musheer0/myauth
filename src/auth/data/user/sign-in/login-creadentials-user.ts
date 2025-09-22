@@ -8,10 +8,13 @@ import {
   VerifyToken,
 } from '../../tokens/verification-token';
 import { getFutureDate } from 'src/shared/utils/data-funcs';
+import { sendEmailPayload } from 'src/shared/types';
+import { generateOTPEmail } from 'src/shared/templates/email/generate-otp-template';
 
 export const LoginCrendentialsUser = async (
   client: PrismaClient,
   data: CredentialsSignInDto,
+  handleEmailEvent: (data: sendEmailPayload) => void,
 ) => {
   const user = await GetUserByEmail(client, data.email);
   if (!user) throw new BadRequestException('invalid credentials');
@@ -41,7 +44,17 @@ export const LoginCrendentialsUser = async (
       scope: 'EMAIL_MFA',
       expires_at: getFutureDate(),
     });
-    //TODO send email
+    handleEmailEvent({
+      to: user.email,
+      title: 'Your MFA code',
+      html: generateOTPEmail({
+        otp: verification_token.opt,
+        title: 'MFA Code',
+        slogan: 'use this code to login',
+        desc: 'Your one-time login code is below. If you didn’t request this, someone shady might be trying to get in—ignore this email.',
+        email: user.email,
+      }),
+    });
     throw new UnauthorizedException({
       error: 'mfa_required',
       verification_id: verification_token.verification_token.id,

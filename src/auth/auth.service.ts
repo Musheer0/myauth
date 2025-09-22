@@ -1,7 +1,8 @@
 /* eslint-disable  @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ClientMetada, jwt_token } from 'src/shared/types';
+import { ClientMetada, jwt_token, sendEmailPayload } from 'src/shared/types';
 import { SignUpDto } from './dto/sign-up.dto';
 import { CreateEmailUser } from './data/user/sign-up/create-email-user';
 import {
@@ -24,13 +25,20 @@ import {
   getAllSession,
   verifySession,
 } from './data/tokens/session-token';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SendEmailDto } from 'src/shared/dto/send-email.dto';
+import { generateOTPEmail } from 'src/shared/templates/email/generate-otp-template';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private eventEmitter: EventEmitter2,
   ) {}
+  private emitSendEmailEvent(data: SendEmailDto) {
+    this.eventEmitter.emit('send:email', data);
+  }
   private async VerifyToken(data: VerificationTokenDto, scope: $Enums.SCOPE) {
     const verification_token = await VerifyToken(this.prisma, {
       id: data.token_id,
@@ -44,7 +52,16 @@ export class AuthService {
       this.prisma,
       data.email,
     );
-    //TODO send email based on scope
+    this.emitSendEmailEvent({
+      html: generateOTPEmail({
+        otp: verification_token.opt,
+        title: 'Verifiy your email',
+        desc: 'verify your email to continue using the account',
+        email: data.email,
+      }),
+      title: 'Verify your email',
+      to: data.email,
+    });
 
     return {
       verification_id: verification_token.verification_token.id,
@@ -64,7 +81,16 @@ export class AuthService {
     if (process.env.DEBUG) {
       console.log(verification_token);
     }
-    //TODO send email based on scope
+    this.emitSendEmailEvent({
+      html: generateOTPEmail({
+        otp: verification_token.opt,
+        title: 'Verifiy your email',
+        desc: 'verify your email to continue using the account',
+        email: data.email,
+      }),
+      title: 'Verify your email',
+      to: data.email,
+    });
     return {
       verification_id: verification_token.verification_token.id,
       expires_at: verification_token.verification_token.expires_at,
@@ -86,8 +112,11 @@ export class AuthService {
   }
 
   async CredentialsLogin(metadata: ClientMetada, data: CredentialsSignInDto) {
-    const user = await LoginCrendentialsUser(this.prisma, data);
-    //TODO send email if mfa login
+    const user = await LoginCrendentialsUser(
+      this.prisma,
+      data,
+      this.emitSendEmailEvent.bind(this),
+    );
     const session = await createSession(this.prisma, metadata, user.id);
     const token = this.jwtService.sign(session);
     return token;

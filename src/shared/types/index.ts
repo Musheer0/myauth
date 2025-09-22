@@ -13,3 +13,4 @@ export type sanitized_verification_token = {
   verification_id: string;
   expires_at: Date;
 };
+export type sendEmailPayload = { html: string; to: string; title: string };

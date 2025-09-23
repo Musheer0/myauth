@@ -30,6 +30,11 @@ import { SendEmailDto } from 'src/shared/dto/send-email.dto';
 import { generateOTPEmail } from 'src/shared/templates/email/generate-otp-template';
 import { EnableEmailMFA } from './data/user/mfa/enable-mfa';
 import { DisableEmailMFA } from './data/user/mfa/disable-mfa';
+import {
+  changePassword,
+  generatePasswordChangeToken,
+} from './data/user/change-password/change-password';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -150,5 +155,19 @@ export class AuthService {
   }
   async DisableMFa(jwt_token: jwt_token) {
     return DisableEmailMFA(this.prisma, jwt_token);
+  }
+  async getChangePassToken(data: EmailDto) {
+    return generatePasswordChangeToken(
+      this.prisma,
+      data,
+      this.emitSendEmailEvent.bind(this),
+    );
+  }
+  async ChangePass(data: ChangePasswordDto) {
+    return changePassword(
+      this.prisma,
+      data,
+      this.emitSendEmailEvent.bind(this),
+    );
   }
 }

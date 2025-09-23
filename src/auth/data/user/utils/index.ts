@@ -26,7 +26,7 @@ export const GetUserByEmail = async (
           is_banned: false,
         },
       })
-    :await client.user.findFirst({
+    : await client.user.findFirst({
         where: {
           email,
         },
@@ -51,7 +51,7 @@ export const GetUserById = async (
     return cache;
   }
   const user = options?.strict
-    ?await client.user.findFirst({
+    ? await client.user.findFirst({
         where: {
           id,
           is_banned: false,

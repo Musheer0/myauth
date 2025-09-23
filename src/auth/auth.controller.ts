@@ -22,6 +22,7 @@ import { VerificationTokenDto } from './dto/verification-token.dto';
 import { EmailDto } from './dto/email.dto';
 import { CredentialsSignInDto } from './dto/credentials-sign-in.dto';
 import { JwtGuard } from './guards/jwt.guard';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('/api/v1/auth')
 export class AuthController {
@@ -95,5 +96,14 @@ export class AuthController {
   @Patch('disable/mfa')
   async disableMfa(@Req() req) {
     return this.authService.DisableMFa(req?.user);
+  }
+
+  @Get('/reset/password')
+  async genChangePassToken(@Body() body: EmailDto) {
+    return this.authService.getChangePassToken(body);
+  }
+  @Patch('/reset/password')
+  async ChangePass(@Body() body: ChangePasswordDto) {
+    return this.authService.ChangePass(body);
   }
 }

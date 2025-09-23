@@ -5,7 +5,7 @@
 import { PrismaClient } from '@prisma/client';
 import { ClientMetada, jwt_token } from 'src/shared/types';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { GetUserById } from '../../user/utils';
+import { GetUserByEmail, GetUserById } from '../../user/utils';
 
 /**
  * Helper to fetch location from IP using free API
@@ -103,6 +103,17 @@ export async function deleteSessionAll(
 ) {
   await client.session.deleteMany({
     where: { user_id: jwt_token.user_id, id: { not: jwt_token.token_id } },
+  });
+  return { success: true };
+}
+export async function deleteSessionAllByEmail(
+  client: PrismaClient,
+  email: string,
+) {
+  const user = await GetUserByEmail(client, email);
+  if (!user) return { success: false };
+  await client.session.deleteMany({
+    where: { user_id: user.id },
   });
   return { success: true };
 }

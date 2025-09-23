@@ -23,10 +23,12 @@ import { EmailDto } from './dto/email.dto';
 import { CredentialsSignInDto } from './dto/credentials-sign-in.dto';
 import { JwtGuard } from './guards/jwt.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { EmailThrottlerGuard } from './guards/email-rate-limit.guard';
 
 @Controller('/api/v1/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+  @UseGuards(EmailThrottlerGuard)
   @Post('sign-up')
   async SignUp(
     @Body() body: SignUpDto,
@@ -45,11 +47,12 @@ export class AuthController {
     }
     return { token: session };
   }
+  @UseGuards(EmailThrottlerGuard)
   @Post('resend/verification/email')
   async ResendEmailVerification(@Body() body: EmailDto) {
     return this.authService.ResendSignUpVerificationToken(body);
   }
-
+  @UseGuards(EmailThrottlerGuard)
   @Post('sign-in/credentials')
   async LoginCredentialsUser(
     @Body() body: CredentialsSignInDto,
@@ -97,7 +100,7 @@ export class AuthController {
   async disableMfa(@Req() req) {
     return this.authService.DisableMFa(req?.user);
   }
-
+  @UseGuards(EmailThrottlerGuard)
   @Get('/reset/password')
   async genChangePassToken(@Body() body: EmailDto) {
     return this.authService.getChangePassToken(body);

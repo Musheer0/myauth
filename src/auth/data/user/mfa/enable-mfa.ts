@@ -2,6 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import { jwt_token } from 'src/shared/types';
 import { verifySession } from '../../tokens/session-token';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { getUserEmailKey, getUserIdKey } from 'src/shared/utils';
+import { redis } from 'src/shared/redis';
 
 export const EnableEmailMFA = async (
   client: PrismaClient,
@@ -16,7 +18,7 @@ export const EnableEmailMFA = async (
   if (session.user?.mfa_enabled) {
     throw new BadRequestException('mfa already enabled');
   }
-  await client.user.update({
+  const updated_user = await client.user.update({
     where: {
       id: session.user?.id,
     },
@@ -24,6 +26,12 @@ export const EnableEmailMFA = async (
       mfa_enabled: true,
       mfa_enabled_at: new Date(),
     },
+  });
+  await redis.set(getUserIdKey(updated_user.id), updated_user, {
+    ex: 5 * 60 * 60,
+  });
+  await redis.set(getUserEmailKey(updated_user.email), updated_user, {
+    ex: 5 * 60 * 60,
   });
   return { mfa_enabled: true };
 };

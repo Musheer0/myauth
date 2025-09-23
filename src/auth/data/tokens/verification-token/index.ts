@@ -1,8 +1,19 @@
-import { $Enums, PrismaClient } from '@prisma/client';
+import { $Enums, PrismaClient, verification_token } from '@prisma/client';
 import { hash, verify } from 'argon2';
 import { BadRequestException } from '@nestjs/common';
 import { generateOtp } from '../../user/utils';
-export const GetVerificationTokenById = (client: PrismaClient, id: string) => {
+import { redis } from 'src/shared/redis';
+import { getVerificationTokenKey } from 'src/shared/utils';
+export const GetVerificationTokenById = async (
+  client: PrismaClient,
+  id: string,
+) => {
+  const token = await redis.get<verification_token>(
+    getVerificationTokenKey(id),
+  );
+  if (!token) return null;
+  if (token.expires_at < new Date()) return null;
+  if (token) return token;
   return client.verification_token.findFirst({
     where: {
       id,
@@ -11,18 +22,24 @@ export const GetVerificationTokenById = (client: PrismaClient, id: string) => {
   });
 };
 
-export const GetVerificationTokenByIdScope = (
+export const GetVerificationTokenByIdScope = async (
   client: PrismaClient,
   id: string,
   scope: $Enums.SCOPE,
 ) => {
-  return client.verification_token.findFirst({
-    where: {
-      id,
-      expires_at: { gt: new Date() },
-      scope,
-    },
-  });
+  let token: verification_token | null = await redis.get<verification_token>(
+    getVerificationTokenKey(id),
+  );
+  if (!token) {
+    token = await client.verification_token.findFirst({
+      where: {
+        id,
+        expires_at: { gt: new Date() },
+        scope,
+      },
+    });
+  }
+  return token;
 };
 export const CreateVerificationToken = async (
   client: PrismaClient,
@@ -38,6 +55,9 @@ export const CreateVerificationToken = async (
       expires_at: options.expires_at || new Date(),
     },
   });
+  await redis.set(getVerificationTokenKey(v_token.id), v_token, {
+    ex: 14 * 60,
+  });
   return {
     opt,
     verification_token: { ...v_token },
@@ -48,9 +68,14 @@ export const VerifyToken = async (
   client: PrismaClient,
   options: { id: string; code: string; scope: $Enums.SCOPE },
 ) => {
-  const token = await client.verification_token.findUnique({
-    where: { id: options.id },
-  });
+  let token: verification_token | null = await redis.get<verification_token>(
+    getVerificationTokenKey(options.id),
+  );
+  if (!token) {
+    token = await client.verification_token.findUnique({
+      where: { id: options.id },
+    });
+  }
 
   if (!token) {
     throw new BadRequestException('Token not found');
@@ -70,5 +95,6 @@ export const VerifyToken = async (
       id: token.id,
     },
   });
+  await redis.del(getVerificationTokenKey(options.id));
   return token;
 };

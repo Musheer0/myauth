@@ -10,7 +10,9 @@ import {
   InternalServerErrorException,
   Patch,
   Post,
+  Query,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -24,6 +26,7 @@ import { CredentialsSignInDto } from './dto/credentials-sign-in.dto';
 import { JwtGuard } from './guards/jwt.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { EmailThrottlerGuard } from './guards/email-rate-limit.guard';
+import { Response } from 'express';
 
 @Controller('/api/v1/auth')
 export class AuthController {
@@ -108,5 +111,13 @@ export class AuthController {
   @Patch('/reset/password')
   async ChangePass(@Body() body: ChangePasswordDto) {
     return this.authService.ChangePass(body);
+  }
+  @Get('/sign-in/google/web')
+  GetOAuthUrl(
+    @Query() params: { redirect_uri: string; state?: string },
+    @Res() res: Response,
+  ) {
+    const url = this.authService.redirectOauthGoogle(params);
+    return res.redirect(url);
   }
 }

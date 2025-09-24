@@ -35,6 +35,7 @@ import {
   generatePasswordChangeToken,
 } from './data/user/change-password/change-password';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { getGoogleOauthUrl } from './data/oauth/google/generate-oauth2-url';
 
 @Injectable()
 export class AuthService {
@@ -169,5 +170,12 @@ export class AuthService {
       data,
       this.emitSendEmailEvent.bind(this),
     );
+  }
+  redirectOauthGoogle(data: { redirect_uri: string; state?: string }) {
+    const url = getGoogleOauthUrl(
+      data.redirect_uri,
+      data.state || data.redirect_uri,
+    );
+    return url;
   }
 }

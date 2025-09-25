@@ -1,6 +1,6 @@
 /* eslint-disable  @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ClientMetada, jwt_token, sendEmailPayload } from 'src/shared/types';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -35,6 +35,9 @@ import {
   generatePasswordChangeToken,
 } from './data/user/change-password/change-password';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { getGoogleOauthUrl } from './data/oauth/google/generate-oauth2-url';
+import { OAuthCallBackGoogleDto } from './dto/oauth-callback-google.dto';
+import { handleCallbackGoogle } from './data/oauth/google/handle_callback';
 
 @Injectable()
 export class AuthService {
@@ -169,5 +172,59 @@ export class AuthService {
       data,
       this.emitSendEmailEvent.bind(this),
     );
+  }
+  redirectOauthGoogle(data: { redirect_uri: string; state?: string }) {
+    const url = getGoogleOauthUrl(
+      data.redirect_uri,
+      data.state || data.redirect_uri,
+    );
+    return url;
+  }
+  async handleOAuthGoogleCallback(
+    data: OAuthCallBackGoogleDto,
+    metadata: ClientMetada,
+  ) {
+    const jwt_token = await handleCallbackGoogle(this.prisma, data, metadata);
+    if ('mfa' in jwt_token && 'user' in jwt_token) {
+      const verification_token = await CreateVerificationToken(this.prisma, {
+        user_id: jwt_token.user.id,
+        scope: 'EMAIL_MFA',
+        expires_at: getFutureDate(),
+      });
+      this.emitSendEmailEvent({
+        to: jwt_token.user.email,
+        title: 'Your MFA code',
+        html: generateOTPEmail({
+          otp: verification_token.opt,
+          title: 'MFA Code',
+          slogan: 'use this code to login',
+          desc: 'Your one-time login code is below. If you didn’t request this, someone shady might be trying to get in—ignore this email.',
+          email: jwt_token.user.email,
+        }),
+      });
+      throw new UnauthorizedException({
+        error: 'mfa_required',
+        verification_id: verification_token.verification_token.id,
+        expires_at: verification_token.verification_token.expires_at,
+        message: 'Login blocked. Multi-factor authentication required.',
+      });
+    }
+    const token = this.jwtService.sign(jwt_token);
+    return token;
+  }
+
+  async handleMFALogin(data: VerificationTokenDto, metadata: ClientMetada) {
+    const verification_token = await VerifyToken(this.prisma, {
+      id: data.token_id,
+      code: data.code,
+      scope: 'EMAIL_MFA',
+    });
+    const session = await createSession(
+      this.prisma,
+      metadata,
+      verification_token.user_id,
+    );
+    const jwt_token = this.jwtService.sign(session);
+    return jwt_token;
   }
 }

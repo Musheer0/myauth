@@ -10,7 +10,9 @@ import {
   InternalServerErrorException,
   Patch,
   Post,
+  Query,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -24,6 +26,8 @@ import { CredentialsSignInDto } from './dto/credentials-sign-in.dto';
 import { JwtGuard } from './guards/jwt.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { EmailThrottlerGuard } from './guards/email-rate-limit.guard';
+import { Response } from 'express';
+import { OAuthCallBackGoogleDto } from './dto/oauth-callback-google.dto';
 
 @Controller('/api/v1/auth')
 export class AuthController {
@@ -108,5 +112,38 @@ export class AuthController {
   @Patch('/reset/password')
   async ChangePass(@Body() body: ChangePasswordDto) {
     return this.authService.ChangePass(body);
+  }
+  @Get('/sign-in/google/web')
+  GetOAuthUrl(
+    @Query() params: { redirect_uri: string; state?: string },
+    @Res() res: Response,
+  ) {
+    if (!params.redirect_uri)
+      throw new BadRequestException('missing redirect_uri');
+    const url = this.authService.redirectOauthGoogle(params);
+    return res.redirect(url);
+  }
+  @Post('/sign-in/google/web/callback')
+  async SignInWithGoogle(
+    @Body() body: OAuthCallBackGoogleDto,
+    @ClientMetadata() metadata: ClientMetada,
+  ) {
+    const token = await this.authService.handleOAuthGoogleCallback(
+      body,
+      metadata,
+    );
+    return {
+      success: true,
+      state: Buffer.from(body.state, 'base64url').toString('utf-8'),
+      token,
+    };
+  }
+  @Post('/sign-in/mfa')
+  async VerifyAndLoginWithMfa(
+    @Body() body: VerificationTokenDto,
+    @ClientMetadata() metadata: ClientMetada,
+  ) {
+    const session = await this.authService.handleMFALogin(body, metadata);
+    return { token: session };
   }
 }

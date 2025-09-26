@@ -49,8 +49,8 @@ JWT – stateless authentication
 📦 Installation
 
 # clone repo
-git clone https://github.com/your-org/auth-system.git
-cd auth-system
+git clone https://github.com/Musheer0/myauth
+cd  myauth 
 
 # install deps
 npm install

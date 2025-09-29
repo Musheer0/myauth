@@ -56,13 +56,14 @@ export class AuthController {
   async ResendEmailVerification(@Body() body: EmailDto) {
     return this.authService.ResendSignUpVerificationToken(body);
   }
-  @UseGuards(EmailThrottlerGuard)
+  // @UseGuards(EmailThrottlerGuard)
   @Post('sign-in/credentials')
   async LoginCredentialsUser(
     @Body() body: CredentialsSignInDto,
     @ClientMetadata() metadata: ClientMetada,
   ) {
     const session = await this.authService.CredentialsLogin(metadata, body);
+
     if (typeof session !== 'string') {
       throw new InternalServerErrorException();
     }

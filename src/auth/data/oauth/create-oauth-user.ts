@@ -17,6 +17,7 @@ export const CreateOAuthUser = async (
     }
 
     if (!exisiting_user.is_email_verified) {
+      const img = exisiting_user.image_url=="https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg"? {image_url:data.picture}:{}
       await prisma.user.update({
         where: {
           id: exisiting_user.id,
@@ -24,6 +25,7 @@ export const CreateOAuthUser = async (
         data: {
           email_verified_at: new Date(),
           is_email_verified: true,
+          ...img
         },
       });
       await redis.set(
